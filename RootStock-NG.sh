@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 #
 # Copyright (c) 2013 Robert Nelson <robertcnelson@gmail.com>
 #
@@ -56,11 +56,6 @@ git_trees () {
 	git_clone_address="https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git"
 	generic_git
 	update_git
-
-	git_project_name="mt7601u"
-	git_clone_address="https://github.com/rcn-ee/mt7601u"
-	generic_git
-	update_git
 }
 
 run_roostock_ng () {
@@ -80,8 +75,8 @@ run_roostock_ng () {
 	fi
 
 	/bin/bash -e "${OIB_DIR}/scripts/install_dependencies.sh" || { exit 1 ; }
-	/bin/sh -e "${OIB_DIR}/scripts/debootstrap.sh" || { exit 1 ; }
-	/bin/sh -e "${OIB_DIR}/scripts/chroot.sh" || { exit 1 ; }
+	/bin/bash -e "${OIB_DIR}/scripts/debootstrap.sh" || { exit 1 ; }
+	/bin/bash -e "${OIB_DIR}/scripts/chroot.sh" || { exit 1 ; }
 	sudo rm -rf ${tempdir}/ || true
 }
 
@@ -111,7 +106,7 @@ check_project_config () {
 	#${project_config}.conf
 	project_config=$(echo ${project_config} | awk -F ".conf" '{print $1}')
 	if [ -f ${DIR}/configs/${project_config}.conf ] ; then
-		. ${DIR}/configs/${project_config}.conf
+		. <(m4 -P ${DIR}/configs/${project_config}.conf)
 		export_filename="${deb_distribution}-${release}-${image_type}-${deb_arch}-${time}"
 
 		# for automation
@@ -121,7 +116,7 @@ check_project_config () {
 		echo "time=\"${time}\"" >> ${DIR}/.project
 		echo "export_filename=\"${export_filename}\"" >> ${DIR}/.project
 		echo "#" >> ${DIR}/.project
-		cat ${DIR}/configs/${project_config}.conf >> ${DIR}/.project
+		m4 -P ${DIR}/configs/${project_config}.conf >> ${DIR}/.project
 	else
 		echo "Invalid *.conf"
 		exit

@@ -1,6 +1,6 @@
-#!/bin/sh -e
+#!/bin/bash -e
 #
-# Copyright (c) 2012-2014 Robert Nelson <robertcnelson@gmail.com>
+# Copyright (c) 2012-2016 Robert Nelson <robertcnelson@gmail.com>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -36,17 +36,17 @@ check_defines () {
 	fi
 
 	if [ "${deb_include}" ] ; then
-		include=$(echo ${deb_include} | sed 's/ /,/g')
+		include=$(echo ${deb_include} | sed 's/ /,/g' | sed 's/\t/,/g')
 		options="${options} --include=${include}"
 	fi
 
 	if [ "${deb_exclude}" ] ; then
-		exclude=$(echo ${deb_exclude} | sed 's/ /,/g')
+		exclude=$(echo ${deb_exclude} | sed 's/ /,/g' | sed 's/\t/,/g')
 		options="${options} --exclude=${exclude}"
 	fi
 
 	if [ "${deb_components}" ] ; then
-		components=$(echo ${deb_components} | sed 's/ /,/g')
+		components=$(echo ${deb_components} | sed 's/ /,/g' | sed 's/\t/,/g')
 		options="${options} --components=${components}"
 	fi
 
@@ -79,8 +79,8 @@ check_defines () {
 		fi
 		;;
 	ubuntu)
-		if [ ! -f /usr/share/debootstrap/scripts/${release} ] ; then
-			sudo ln -s /usr/share/debootstrap/scripts/gutsy /usr/share/debootstrap/scripts/${release}
+		if [ ! -f /usr/share/debootstrap/scripts/${suite} ] ; then
+			sudo ln -s /usr/share/debootstrap/scripts/gutsy /usr/share/debootstrap/scripts/${suite}
 		fi
 		if [ ! -f /usr/share/keyrings/ubuntu-archive-keyring.gpg ] ; then
 			options="${options} --no-check-gpg"
@@ -104,10 +104,10 @@ check_defines () {
 	if [ ! "${deb_mirror}" ] ; then
 		case "${deb_distribution}" in
 		debian)
-			deb_mirror="ftp.us.debian.org/debian/"
+			deb_mirror="deb.debian.org/debian"
 			;;
 		ubuntu)
-			deb_mirror="ports.ubuntu.com/ubuntu-ports/"
+			deb_mirror="ports.ubuntu.com/ubuntu-ports"
 			;;
 		esac
 	fi

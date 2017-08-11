@@ -22,6 +22,9 @@
 
 export LC_ALL=C
 
+u_boot_release="v2017.07"
+u_boot_release_x15="ti-2017.01"
+
 #contains: rfs_username, release_date
 if [ -f /etc/rcn-ee.conf ] ; then
 	. /etc/rcn-ee.conf
@@ -79,6 +82,15 @@ git_clone_full () {
 }
 
 setup_system () {
+	#For when sed/grep/etc just gets way to complex...
+	cd /
+	if [ -f /opt/scripts/mods/debian-add-sbin-usr-sbin-to-default-path.diff ] ; then
+		if [ -f /usr/bin/patch ] ; then
+			echo "Patching: /etc/profile"
+			patch -p1 < /opt/scripts/mods/debian-add-sbin-usr-sbin-to-default-path.diff
+		fi
+	fi
+
 	echo "" >> /etc/securetty
 	echo "#USB Gadget Serial Port" >> /etc/securetty
 	echo "ttyGS0" >> /etc/securetty
@@ -143,14 +155,51 @@ install_git_repos () {
 	git_clone
 }
 
+install_build_pkgs () {
+	cd /opt/
+	cd /
+}
+
+other_source_links () {
+	rcn_https="https://rcn-ee.com/repos/git/u-boot-patches"
+
+	mkdir -p /opt/source/u-boot_${u_boot_release}/
+	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0001-omap3_beagle-uEnv.txt-bootz-n-fixes.patch
+	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0001-am335x_evm-uEnv.txt-bootz-n-fixes.patch
+	wget --directory-prefix="/opt/source/u-boot_${u_boot_release}/" ${rcn_https}/${u_boot_release}/0002-U-Boot-BeagleBone-Cape-Manager.patch
+	mkdir -p /opt/source/u-boot_${u_boot_release_x15}/
+	wget --directory-prefix="/opt/source/u-boot_${u_boot_release_x15}/" ${rcn_https}/${u_boot_release_x15}/0001-beagle_x15-uEnv.txt-bootz-n-fixes.patch
+
+	echo "u-boot_${u_boot_release} : /opt/source/u-boot_${u_boot_release}" >> /opt/source/list.txt
+	echo "u-boot_${u_boot_release_x15} : /opt/source/u-boot_${u_boot_release_x15}" >> /opt/source/list.txt
+
+	chown -R ${rfs_username}:${rfs_username} /opt/source/
+}
+
+unsecure_root () {
+	root_password=$(cat /etc/shadow | grep root | awk -F ':' '{print $2}')
+	sed -i -e 's:'$root_password'::g' /etc/shadow
+
+	if [ -f /etc/ssh/sshd_config ] ; then
+		#Make ssh root@beaglebone work..
+		sed -i -e 's:PermitEmptyPasswords no:PermitEmptyPasswords yes:g' /etc/ssh/sshd_config
+		sed -i -e 's:UsePAM yes:UsePAM no:g' /etc/ssh/sshd_config
+		#Starting with Jessie:
+		sed -i -e 's:PermitRootLogin without-password:PermitRootLogin yes:g' /etc/ssh/sshd_config
+	fi
+
+	if [ -f /etc/sudoers ] ; then
+		#Don't require password for sudo access
+		echo "${rfs_username}  ALL=NOPASSWD: ALL" >>/etc/sudoers
+	fi
+}
 
 is_this_qemu
 
 setup_system
 #setup_desktop
 
-#install_gem_pkgs
-#install_node_pkgs
+
 #install_pip_pkgs
 if [ -f /usr/bin/git ] ; then
 	git config --global user.email "${rfs_username}@example.com"
@@ -160,6 +209,5 @@ if [ -f /usr/bin/git ] ; then
 	git config --global --unset-all user.name
 fi
 #install_build_pkgs
-#other_source_links
+other_source_links
 #unsecure_root
-#todo
